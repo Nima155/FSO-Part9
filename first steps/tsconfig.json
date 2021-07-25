@@ -1,0 +1,18 @@
+// this file is used to define how the TypeScript compiler
+// should interpret the code
+{
+	"compilerOptions": {
+		"noImplicitAny": true,
+		"noImplicitReturns": true,
+		"strictNullChecks": true,
+		"strictPropertyInitialization": true,
+		"strictBindCallApply": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noImplicitThis": true,
+		"alwaysStrict": true,
+		"esModuleInterop": true,
+		"declaration": true
+	}
+}
+// https://www.typescriptlang.org/docs/handbook/tsconfig-json.html
