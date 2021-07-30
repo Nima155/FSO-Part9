@@ -62,4 +62,9 @@ app.post("/exercises", (req, rep) => {
 	}
 });
 
+app.use((_req, rep, next) => {
+	// middleware for handling unhandled routes
+	rep.status(404).json({ error: "not found" });
+	next();
+});
 app.listen(3003, () => console.log("started listening on port 3003"));
