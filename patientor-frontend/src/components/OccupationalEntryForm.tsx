@@ -1,89 +1,103 @@
 import { Field, Form, Formik } from "formik";
 import React from "react";
-import { Button, Grid } from "semantic-ui-react";
-import { DiagnosisSelection, TextField } from "../AddPatientModal/FormField";
+import { Form as SForm } from "semantic-ui-react";
+import { TextField } from "../AddPatientModal/FormField";
+import * as Yup from "yup";
 
-import { useStateValue } from "../state";
-import { HealthEntryTypes, OccupationalHealthCareEntry } from "../types";
+import { HealthEntryTypes } from "../types";
 import { Prop } from "./Patient";
+import moment from "moment";
+import GeneralEntryForm, {
+	generalInitialValues,
+	generalValidationSchema,
+} from "./GeneralEntryForm";
 // interface
 
 export default function OccupationalEntryForm({ onSubmit }: Prop) {
-	const [{ diagnoses }] = useStateValue();
 	return (
 		<Formik
 			initialValues={{
 				type: HealthEntryTypes.OccupationalHealthcare,
-				description: "",
-				date: "",
-				specialist: "",
-				diagnosisCodes: undefined,
+				...generalInitialValues,
 				employerName: "",
+				sickLeave: { startDate: "", endDate: "" },
 			}}
 			onSubmit={onSubmit}
-			validate={(value: Omit<OccupationalHealthCareEntry, "id">) => {
-				const errors: { [field: string]: string } = {};
-				const REQUIRED = "required";
-				if (!value.description) errors.description = REQUIRED;
-				if (!value.date) errors.date = REQUIRED;
-				if (!value.specialist) errors.specialist = REQUIRED;
-				if (!value.employerName) errors.employerName = REQUIRED;
+			validationSchema={generalValidationSchema.concat(
+				Yup.object({
+					employerName: Yup.string()
+						.min(2, "Employer name must be at least 2 characters long")
+						.required("Required"),
+					sickLeave: Yup.object().shape(
+						{
+							startDate: Yup.string()
+								.test("is-date", "${path} is not valid", (date) =>
+									// moment(date, "YYYY-MM-DD", true);
+									date?.length
+										? moment(date, "YYYY-MM-DD", true).isValid()
+										: true
+								)
+								.ensure()
+								.when("endDate", {
+									is: (endDate: string) => endDate && endDate.length > 0,
+									then: Yup.string().required("required"),
+								}),
+							endDate: Yup.string()
+								.test(
+									"is-date",
+									"${path} is not valid or is before the start date",
+									function (date) {
+										// we use a normal anonymous function as it gets its own (this)
 
-				return errors;
-			}}
+										return date?.length
+											? moment(date, "YYYY-MM-DD", true).isValid() &&
+													moment(date).isAfter(this.parent.startDate)
+											: true;
+									}
+								)
+								.ensure()
+								.when("startDate", {
+									is: (startDate: string) => startDate && startDate.length > 0,
+									then: Yup.string().required("required"),
+								}),
+						},
+						[["endDate", "startDate"]]
+					),
+				})
+			)}
 		>
 			{(
 				{ setFieldValue, setFieldTouched, dirty, isValid } // dirty => user has touched the field,
 			) => (
 				// isValid checks the validation callBack
 				<Form className="form ui">
-					<Field
-						label="Description"
-						name="description"
-						placeholder="Description"
-						component={TextField}
-					/>
-					<Field
-						label="Date of Event"
-						placeholder="YYYY-MM-DD"
-						name="date"
-						component={TextField}
-					/>
-					<Field
-						label="Dr."
-						placeholder="Name of specialist"
-						name="specialist"
-						component={TextField}
-					/>
-					<Field
-						label="Employer"
-						placeholder="Patients employer"
-						name="employerName"
-						component={TextField}
-					/>
-					<Field
-						label="Sick Leave"
-						placeholder="Patients employer"
-						name="SickLeave"
-						component={TextField}
-					/>
-					<DiagnosisSelection
-						setFieldValue={setFieldValue}
+					<GeneralEntryForm
 						setFieldTouched={setFieldTouched}
-						diagnoses={Object.values(diagnoses)}
-					/>
-					<Grid>
-						<Grid.Column floated="right" width={5}>
-							<Button
-								type="submit"
-								floated="right"
-								color="green"
-								disabled={!dirty || !isValid}
-							>
-								Add
-							</Button>
-						</Grid.Column>
-					</Grid>
+						setFieldValue={setFieldValue}
+						dirty={dirty}
+						isValid={isValid}
+					>
+						<Field
+							label="Employer"
+							placeholder="Patients employer"
+							name="employerName"
+							component={TextField}
+						/>
+						<SForm.Group widths="equal">
+							<Field
+								label="Starting date of sick leave"
+								placeholder="YYYY-MM-DD"
+								name="sickLeave.startDate"
+								component={TextField}
+							/>
+							<Field
+								label="End date of sick leave"
+								placeholder="YYYY-MM-DD"
+								name="sickLeave.endDate"
+								component={TextField}
+							/>
+						</SForm.Group>
+					</GeneralEntryForm>
 				</Form>
 			)}
 		</Formik>

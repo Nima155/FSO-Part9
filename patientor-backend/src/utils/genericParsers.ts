@@ -13,7 +13,8 @@ const isValidEnum =
 	<T>(e: T) =>
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	(type: any): type is T[keyof T] => {
-		return Object.values(e).includes(type as T[keyof T]);
+		// console.log(Object.values(e));
+		return Object.values(e).includes(type);
 	};
 export function parseDate(params: unknown): string {
 	if (!params || !isString(params) || !isDate(params)) {
@@ -30,7 +31,8 @@ export function parseString(str: unknown): string {
 }
 
 export function parseType<T>(e: T, type: unknown): T[keyof T] {
-	if (!type || !isValidEnum(e)(type)) throw new Error(`Invalid type ${type}`);
+	if (type === undefined || !isValidEnum(e)(type))
+		throw new Error(`Invalid type ${type}`);
 
 	return type;
 }

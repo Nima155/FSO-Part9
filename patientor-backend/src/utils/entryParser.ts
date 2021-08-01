@@ -3,7 +3,7 @@ import {
 	HealthEntryWithoutId,
 	HealthEntryTypes,
 	SickLeave,
-	HealthCheckRating,
+	HealthCheckRating as HCR,
 	BaseEntryWithoutId,
 } from "../types";
 import diagnoses from "../data/diagnoses.json";
@@ -59,7 +59,11 @@ function parseDiagnosisCode(
 }
 
 function parseLeave(param: unknown): SickLeave | undefined {
-	if (!param) return undefined;
+	if (
+		!param ||
+		(param instanceof Object && Object.values(param).every((e) => e == ""))
+	)
+		return undefined;
 
 	if (!isLeave(param)) throw new Error("Invalid sick leave format");
 
@@ -110,7 +114,7 @@ export default function toNewEntry({
 			return {
 				...intermediateObject,
 				type: HealthEntryTypes.HealthCheck,
-				healthCheckRating: parseType(HealthCheckRating, healthCheckRating),
+				healthCheckRating: parseType(HCR, healthCheckRating),
 			};
 		case HealthEntryTypes.Hospital:
 			return {
